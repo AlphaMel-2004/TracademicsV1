@@ -18,6 +18,14 @@ class Department extends Model
     {
         return $this->hasMany(Program::class);
     }
+
+    /**
+     * Get the users for the department.
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }
 
 

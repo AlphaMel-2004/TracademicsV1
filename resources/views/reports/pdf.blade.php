@@ -19,8 +19,8 @@
 				<th>Program</th>
 				<th>Department</th>
 				<th>Term</th>
-				<th>Compiled</th>
-				<th>Not Compiled</th>
+				<th>Complied</th>
+				<th>Not Complied</th>
 				<th>Not Applicable</th>
 			</tr>
 		</thead>

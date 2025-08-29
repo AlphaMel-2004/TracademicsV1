@@ -33,15 +33,15 @@ header {
     z-index: 30;
 }
 
-/* Main content area (scoped to app layout only) */
-body.page-bg main {
+/* Main content area */
+main {
     margin-left: 16rem; /* 256px - matches sidebar width */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-body.page-bg section {
+section {
     flex: 1;
     background-color: var(--page-bg);
 }
@@ -309,12 +309,6 @@ body.page-bg section {
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 50;
-}
-
-/* Ensure logout modal overlay is not too dark and keeps page visible */
-#logoutModal {
-    background: rgba(85, 84, 84, 0.2) !important;
-    backdrop-filter: blur(2px);
 }
 
 .modal-content {

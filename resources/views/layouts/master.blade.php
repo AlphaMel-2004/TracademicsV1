@@ -44,7 +44,7 @@
 						<i class="bi bi-person-circle text-2xl"></i>
 					</button>
 					<div id="profileMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded shadow">
-						<a class="block px-4 py-2 hover:bg-gray-50" href="#">Profile Settings</a>
+						<a class="block px-4 py-2 hover:bg-gray-50" href="{{ route('profile.settings') }}">Profile Settings</a>
 						<form method="POST" action="{{ route('logout') }}">
 							@csrf
 							<button class="w-full text-left px-4 py-2 hover:bg-gray-50" type="submit">Logout</button>

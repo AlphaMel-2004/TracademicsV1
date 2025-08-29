@@ -60,11 +60,14 @@ class OrgSeeder extends Seeder
         }
 
         $terms = [
-            ['name' => '1st Sem','year' => '2025-2026'],
-            ['name' => '2nd Sem','year' => '2025-2026'],
+            ['name' => '1st Sem','year' => '2025-2026', 'is_active' => true],
+            ['name' => '2nd Sem','year' => '2025-2026', 'is_active' => false],
         ];
         foreach ($terms as $t) {
-            DB::table('terms')->updateOrInsert($t, $t);
+            DB::table('semesters')->updateOrInsert(
+                ['name' => $t['name'], 'year' => $t['year']], 
+                $t
+            );
         }
 
         $docTypes = [

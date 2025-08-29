@@ -17,9 +17,9 @@
             </div>
             <div class="text-right">
                 @php
-                    $compiled = $assignment->complianceDocuments->where('status', 'Compiled')->count();
+                    $complied = $assignment->complianceDocuments->where('status', 'Complied')->count();
                     $total = $assignment->complianceDocuments->count();
-                    $percentage = $total > 0 ? round(($compiled / $total) * 100, 1) : 0;
+                    $percentage = $total > 0 ? round(($complied / $total) * 100, 1) : 0;
                 @endphp
                 <span class="text-sm text-gray-500">{{ $percentage }}% Complete</span>
             </div>
@@ -35,7 +35,7 @@
             </div>
             <div class="flex justify-between text-sm">
                 <span class="text-gray-600">Compliance:</span>
-                <span class="font-medium text-gray-800">{{ $compiled }}/{{ $total }}</span>
+                <span class="font-medium text-gray-800">{{ $complied }}/{{ $total }}</span>
             </div>
         </div>
         
@@ -70,14 +70,14 @@
     @php
         $totalAssignments = $assignments->count();
         $totalComplianceItems = 0;
-        $totalCompiled = 0;
-        
+        $totalComplied = 0;
+
         foreach($assignments as $assignment) {
             $totalComplianceItems += $assignment->complianceDocuments->count();
-            $totalCompiled += $assignment->complianceDocuments->where('status', 'Compiled')->count();
+            $totalComplied += $assignment->complianceDocuments->where('status', 'Complied')->count();
         }
-        
-        $overallPercentage = $totalComplianceItems > 0 ? round(($totalCompiled / $totalComplianceItems) * 100, 1) : 0;
+
+        $overallPercentage = $totalComplianceItems > 0 ? round(($totalComplied / $totalComplianceItems) * 100, 1) : 0;
     @endphp
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -86,7 +86,7 @@
             <div class="text-sm text-gray-600">Subject Assignments</div>
         </div>
         <div class="text-center">
-            <div class="text-2xl font-bold text-green-600">{{ $totalCompiled }}/{{ $totalComplianceItems }}</div>
+            <div class="text-2xl font-bold text-green-600">{{ $totalComplied }}/{{ $totalComplianceItems }}</div>
             <div class="text-sm text-gray-600">Documents Submitted</div>
         </div>
         <div class="text-center">

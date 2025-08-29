@@ -67,7 +67,7 @@
             </div>
         </div>
 
-        <!-- Compliance Monitoring Chart with Filters -->
+                <!-- Compliance Monitoring Chart with Filters -->
         <div class="bg-white rounded-lg shadow mb-8">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Compliance Monitoring Chart</h3>
@@ -99,16 +99,14 @@
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['compiled'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl font-bold text-purple-600">{{ $data['compliance_chart']['percentage'] }}%</div>
                         <div class="text-sm text-gray-600">Completion Rate</div>
                     </div>
-                </div>
-                
-                <div class="w-full bg-gray-200 rounded-full h-4">
+                </div>                <div class="w-full bg-gray-200 rounded-full h-4">
                     <div class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" 
                          style="width: {{ $data['compliance_chart']['percentage'] }}%"></div>
                 </div>
@@ -130,16 +128,18 @@
                     <thead class="bg-green-600">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Department</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Faculty Count</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Assignments</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total Number of Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Part-time Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Full-time Faculty</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($data['departments'] as $dept)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $dept->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $dept->faculty_count }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $dept->assignment_count }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $dept->total_faculty }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $dept->part_time }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $dept->full_time }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -190,15 +190,28 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Department Compliance Chart</h3>
                 <p class="text-sm text-gray-600 mt-1">Compliance status for programs under {{ $user->department->name }}</p>
+                
+                <!-- Filter for Dean Dashboard -->
+                <div class="mt-4">
+                    <div>
+                        <label for="dean_program_filter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Program</label>
+                        <select id="dean_program_filter" class="form-input w-48" onchange="filterDeanCompliance()">
+                            <option value="">All Programs</option>
+                            @foreach($data['department_programs'] as $prog)
+                                <option value="{{ $prog->id }}">{{ $prog->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div id="dean-compliance-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="text-center">
                         <div class="text-3xl font-bold text-blue-600">{{ $data['compliance_chart']['total'] }}</div>
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['compiled'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
@@ -208,7 +221,7 @@
                 </div>
                 
                 <div class="w-full bg-gray-200 rounded-full h-4">
-                    <div class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" 
+                    <div id="dean-progress-bar" class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" 
                          style="width: {{ $data['compliance_chart']['percentage'] }}%"></div>
                 </div>
             </div>
@@ -223,7 +236,9 @@
                     <thead class="bg-green-600">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Program</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Faculty Count</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total Number of Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Part-time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Full-time</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Assignments</th>
                         </tr>
                     </thead>
@@ -231,7 +246,9 @@
                         @foreach($data['programs'] as $prog)
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $prog->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $prog->faculty_count }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $prog->total_faculty }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $prog->part_time }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $prog->full_time }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $prog->assignment_count }}</td>
                         </tr>
                         @endforeach
@@ -291,7 +308,7 @@
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['compiled'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
@@ -373,7 +390,7 @@
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['compiled'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
@@ -414,13 +431,13 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 @php
-                                    $compiled = $assignment->complianceDocuments->where('status', 'Compiled')->count();
+                                    $complied = $assignment->complianceDocuments->where('status', 'Complied')->count();
                                     $total = $assignment->complianceDocuments->count();
-                                    $percentage = $total > 0 ? round(($compiled / $total) * 100, 1) : 0;
+                                    $percentage = $total > 0 ? round(($complied / $total) * 100, 1) : 0;
                                 @endphp
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                     {{ $percentage >= 80 ? 'bg-green-100 text-green-800' : ($percentage >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                    {{ $percentage }}% ({{ $compiled }}/{{ $total }})
+                                    {{ $percentage }}% ({{ $complied }}/{{ $total }})
                                 </span>
                             </td>
                         </tr>
@@ -465,15 +482,69 @@ document.getElementById('department_filter').addEventListener('change', function
             })
             .catch(error => console.error('Error fetching programs:', error));
     }
+    
+    // Update compliance chart when department changes
+    filterCompliance();
 });
 
 function filterCompliance() {
     const departmentId = document.getElementById('department_filter').value;
     const programId = document.getElementById('program_filter').value;
     
-    // Here you would implement the actual filtering logic
-    // For now, this is a placeholder for the filter functionality
-    console.log('Filtering by:', { departmentId, programId });
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (departmentId) params.append('department_id', departmentId);
+    if (programId) params.append('program_id', programId);
+    
+    // Fetch updated compliance data
+    fetch(`/api/compliance/data?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update the compliance chart display
+            document.querySelector('.text-3xl.font-bold.text-blue-600').textContent = data.total;
+            document.querySelector('.text-3xl.font-bold.text-green-600').textContent = data.complied;
+            document.querySelector('.text-3xl.font-bold.text-purple-600').textContent = data.percentage + '%';
+            
+            // Update the progress bar
+            const progressBar = document.querySelector('.bg-gradient-to-r');
+            progressBar.style.width = data.percentage + '%';
+        })
+        .catch(error => {
+            console.error('Error updating compliance data:', error);
+        });
+}
+</script>
+@endif
+
+@if($data['type'] === 'dean')
+<script>
+function filterDeanCompliance() {
+    const programId = document.getElementById('dean_program_filter').value;
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('department_id', '{{ $user->department_id }}');
+    if (programId) params.append('program_id', programId);
+    
+    // Fetch updated compliance data
+    fetch(`/api/compliance/data?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            // Update the compliance chart display
+            const statsContainer = document.getElementById('dean-compliance-stats');
+            const statsBoxes = statsContainer.querySelectorAll('.text-center');
+            
+            statsBoxes[0].querySelector('.text-3xl').textContent = data.total;
+            statsBoxes[1].querySelector('.text-3xl').textContent = data.complied;
+            statsBoxes[2].querySelector('.text-3xl').textContent = data.percentage + '%';
+            
+            // Update the progress bar
+            const progressBar = document.getElementById('dean-progress-bar');
+            progressBar.style.width = data.percentage + '%';
+        })
+        .catch(error => {
+            console.error('Error updating compliance data:', error);
+        });
 }
 </script>
 @endif

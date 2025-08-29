@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// This model is kept for backward compatibility
+// New functionality should use the Semester model
 class Term extends Model
 {
     use HasFactory;
+
+    protected $table = 'semesters'; // Point to the renamed table
 
     protected $fillable = ['name', 'year'];
 
@@ -16,7 +20,7 @@ class Term extends Model
      */
     public function facultyAssignments()
     {
-        return $this->hasMany(FacultyAssignment::class);
+        return $this->hasMany(FacultyAssignment::class, 'semester_id');
     }
 }
 

@@ -15,23 +15,21 @@ class MonitorController extends Controller
 {
     public function departments()
     {
-        if (!Auth::user()->hasRole('VPAA')) {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'VPAA') {
             abort(403, 'Unauthorized action.');
         }
         
-        // Get departments with counts using separate queries to avoid GROUP BY issues
-        $departments = Department::all()->map(function ($department) {
-            $department->users_count = User::where('department_id', $department->id)->count();
-            $department->programs_count = Program::where('department_id', $department->id)->count();
-            return $department;
-        });
+        // Optimize with eager loading and aggregation
+        $departments = Department::withCount(['users', 'programs'])->get();
 
         return view('monitor.departments', compact('departments'));
     }
 
     public function programs($departmentId)
     {
-        if (!Auth::user()->hasRole('VPAA')) {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'VPAA') {
             abort(403, 'Unauthorized action.');
         }
         
@@ -49,32 +47,86 @@ class MonitorController extends Controller
         return view('monitor.programs', compact('department', 'programs'));
     }
 
-    public function facultyCompliance($programId)
+    public function facultyCompliance(Request $request, $programId)
     {
-        if (!Auth::user()->hasRole('VPAA')) {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'VPAA') {
             abort(403, 'Unauthorized action.');
         }
         
         $program = Program::with('department')->findOrFail($programId);
-        $faculty = User::where('program_id', $programId)
-            ->where('role_id', 4) // Faculty Member role
-            ->with(['facultyAssignments.complianceDocuments.documentType'])
-            ->get();
+        
+        // Start with base query - VPAA can see all faculty regardless of semester
+        $facultyQuery = User::where('program_id', $programId)
+            ->whereHas('role', function($query) {
+                $query->where('name', 'Faculty Member');
+            })
+            ->with([
+                'facultyAssignments' => function($query) {
+                    // VPAA can see all assignments, not filtered by semester
+                    $query->orderBy('semester_id', 'desc');
+                },
+                'facultyAssignments.subject',
+                'facultyAssignments.complianceDocuments.documentType',
+                'facultyAssignments.complianceDocuments.links'
+            ]);
+
+        // Apply filters
+        if ($request->filled('faculty_name')) {
+            $facultyQuery->where('name', 'like', '%' . $request->faculty_name . '%');
+        }
+
+        $faculty = $facultyQuery->get();
+
+        // Filter by subject and compliance status after loading relationships
+        if ($request->filled('subject') || $request->filled('compliance_status')) {
+            $faculty = $faculty->filter(function ($member) use ($request) {
+                $hasMatchingData = false;
+                
+                foreach ($member->facultyAssignments as $assignment) {
+                    $subjectMatch = true;
+                    if ($request->filled('subject')) {
+                        $subjectText = $assignment->subject 
+                            ? $assignment->subject->code . ' - ' . $assignment->subject->title
+                            : $assignment->subject_code . ' - ' . $assignment->subject_description;
+                        $subjectMatch = stripos($subjectText, $request->subject) !== false;
+                    }
+                    
+                    if ($subjectMatch) {
+                        if ($request->filled('compliance_status')) {
+                            foreach ($assignment->complianceDocuments as $document) {
+                                if ($document->status === $request->compliance_status) {
+                                    $hasMatchingData = true;
+                                    break 2;
+                                }
+                            }
+                        } else {
+                            $hasMatchingData = true;
+                            break;
+                        }
+                    }
+                }
+                
+                return $hasMatchingData;
+            });
+        }
 
         return view('monitor.faculty-compliance', compact('program', 'faculty'));
     }
 
     public function faculty()
     {
-        if (!Auth::user()->hasRole('Dean')) {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'Dean') {
             abort(403, 'Unauthorized action.');
         }
         
-        $user = Auth::user();
-        
         // Get programs with counts using separate queries
         $programs = Program::where('department_id', $user->department_id)->get()->map(function ($program) {
-            $program->users_count = User::where('program_id', $program->id)->count();
+            $program->users_count = User::where('program_id', $program->id)
+                ->whereHas('role', function($query) {
+                    $query->where('name', 'Faculty Member');
+                })->count();
             $program->faculty_assignments_count = FacultyAssignment::whereHas('user', function($q) use ($program) {
                 $q->where('program_id', $program->id);
             })->count();
@@ -84,36 +136,116 @@ class MonitorController extends Controller
         return view('monitor.faculty', compact('programs'));
     }
 
-    public function programFaculty($programId)
+    public function programFaculty(Request $request, $programId)
     {
-        if (!Auth::user()->hasRole('Dean')) {
+        $user = Auth::user();
+        
+        // Check if user is Dean
+        if (!$user->role || $user->role->name !== 'Dean') {
             abort(403, 'Unauthorized action.');
         }
         
-        $user = Auth::user();
         $program = Program::where('id', $programId)
             ->where('department_id', $user->department_id)
             ->firstOrFail();
 
-        $faculty = User::where('program_id', $programId)
-            ->where('role_id', 4) // Faculty Member role
-            ->with(['facultyAssignments.complianceDocuments.documentType'])
-            ->get();
+        // Start with base query for faculty users only
+        $facultyQuery = User::where('program_id', $programId)
+            ->whereHas('role', function($query) {
+                $query->where('name', 'Faculty Member');
+            })
+            ->with([
+                'facultyAssignments' => function($query) use ($user) {
+                    // Filter by current semester for the dean
+                    $query->where('semester_id', $user->current_semester_id);
+                },
+                'facultyAssignments.subject',
+                'facultyAssignments.complianceDocuments.documentType',
+                'facultyAssignments.complianceDocuments.links'
+            ]);
+
+        // Apply faculty name filter
+        if ($request->filled('faculty_name')) {
+            $facultyQuery->where('name', 'like', '%' . $request->faculty_name . '%');
+        }
+
+        $faculty = $facultyQuery->get();
+        
+        // Filter by subject and compliance status after loading relationships
+        if ($request->filled('subject') || $request->filled('compliance_status')) {
+            $faculty = $faculty->filter(function ($member) use ($request) {
+                $hasMatchingData = false;
+                
+                foreach ($member->facultyAssignments as $assignment) {
+                    $subjectMatch = true;
+                    if ($request->filled('subject')) {
+                        $subjectText = $assignment->subject 
+                            ? $assignment->subject->code . ' - ' . $assignment->subject->title
+                            : $assignment->subject_code . ' - ' . $assignment->subject_description;
+                        $subjectMatch = stripos($subjectText, $request->subject) !== false;
+                    }
+                    
+                    if ($subjectMatch) {
+                        if ($request->filled('compliance_status')) {
+                            foreach ($assignment->complianceDocuments as $document) {
+                                if ($document->status === $request->compliance_status) {
+                                    $hasMatchingData = true;
+                                    break 2;
+                                }
+                            }
+                        } else {
+                            $hasMatchingData = true;
+                            break;
+                        }
+                    }
+                }
+                
+                return $hasMatchingData;
+            });
+        }
 
         return view('monitor.program-faculty', compact('program', 'faculty', 'user'));
     }
 
-    public function compliances()
+    public function compliances(Request $request)
     {
-        if (!Auth::user()->hasRole('Program Head')) {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'Program Head') {
             abort(403, 'Unauthorized action.');
         }
         
-        $user = Auth::user();
-        $faculty = User::where('program_id', $user->program_id)
-            ->where('role_id', 4) // Faculty Member role
-            ->with(['facultyAssignments.complianceDocuments.documentType'])
-            ->get();
+        $query = User::where('program_id', $user->program_id)
+            ->whereHas('role', function($query) {
+                $query->where('name', 'Faculty Member');
+            });
+
+        // Apply faculty name filter
+        if ($request->filled('faculty_name')) {
+            $query->where('name', 'like', '%' . $request->get('faculty_name') . '%');
+        }
+
+        $faculty = $query->with([
+            'facultyAssignments' => function($assignmentQuery) use ($user, $request) {
+                $assignmentQuery->where('semester_id', $user->current_semester_id);
+                
+                // Apply subject filter
+                if ($request->filled('subject')) {
+                    $assignmentQuery->where(function($subQuery) use ($request) {
+                        $subQuery->where('subject_code', 'like', '%' . $request->get('subject') . '%')
+                                ->orWhere('subject_description', 'like', '%' . $request->get('subject') . '%');
+                    });
+                }
+            },
+            'facultyAssignments.subject',
+            'facultyAssignments.complianceDocuments' => function($docQuery) use ($request) {
+                // Apply compliance status filter
+                if ($request->filled('compliance_status')) {
+                    $docQuery->where('status', $request->get('compliance_status'));
+                }
+            },
+            'facultyAssignments.complianceDocuments.documentType',
+            'facultyAssignments.complianceDocuments.links'
+        ])->get();
 
         return view('monitor.compliances', compact('faculty'));
     }
@@ -124,10 +256,10 @@ class MonitorController extends Controller
             $q->where('faculty_id', $userId);
         })->count();
 
-        $compiled = ComplianceDocument::whereHas('assignment', function($q) use ($userId) {
+        $complied = ComplianceDocument::whereHas('assignment', function($q) use ($userId) {
             $q->where('faculty_id', $userId);
-        })->where('status', 'Compiled')->count();
+        })->where('status', 'Complied')->count();
 
-        return $total > 0 ? round(($compiled / $total) * 100, 1) : 0;
+        return $total > 0 ? round(($complied / $total) * 100, 1) : 0;
     }
 }

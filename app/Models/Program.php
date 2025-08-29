@@ -9,7 +9,7 @@ class Program extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'department_id'];
+    protected $fillable = ['name', 'department_id', 'description'];
 
     /**
      * Get the department that owns the program.
@@ -25,6 +25,14 @@ class Program extends Model
     public function subjects()
     {
         return $this->hasMany(Subject::class);
+    }
+
+    /**
+     * Get the users for the program.
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
     }
 }
 

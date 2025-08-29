@@ -24,18 +24,11 @@
 	<title>@yield('title','Tracademics')</title>
 	@vite(['resources/css/app.css','resources/js/app.js'])
 	<link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+	<link rel="stylesheet" href="{{ asset('css/login-bg.css') }}">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
  </head>
- <body class="bg-[#DDF5E6] min-h-screen flex flex-col">
- 	<main class="p-6 flex-1 flex flex-col items-center justify-center">
- 		<div class="text-center mb-6">
- 			<div class="flex items-center justify-center gap-2 mb-2">
- 				<img src="{{ asset('favicon.ico') }}" class="h-10 w-10" alt="Logo">
- 				<span class="text-2xl font-semibold">Tracademics</span>
- 			</div>
- 		</div>
- 		@yield('content')
- 	</main>
+ <body class="min-h-screen login-background">
+ 	@yield('content')
  </body>
 </html>
 

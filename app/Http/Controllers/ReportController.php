@@ -57,9 +57,9 @@ class ReportController extends Controller
     private function calculateOverallComplianceRate()
     {
         $total = ComplianceDocument::count();
-        $compiled = ComplianceDocument::where('status', 'Compiled')->count();
-        
-        return $total > 0 ? round(($compiled / $total) * 100, 1) : 0;
+        $complied = ComplianceDocument::where('status', 'Complied')->count();
+
+        return $total > 0 ? round(($complied / $total) * 100, 1) : 0;
     }
 
     private function calculateDepartmentComplianceRate($departmentId)
@@ -68,11 +68,11 @@ class ReportController extends Controller
             $q->where('department_id', $departmentId);
         })->count();
         
-        $compiled = ComplianceDocument::whereHas('assignment.user', function($q) use ($departmentId) {
+        $complied = ComplianceDocument::whereHas('assignment.user', function($q) use ($departmentId) {
             $q->where('department_id', $departmentId);
-        })->where('status', 'Compiled')->count();
+        })->where('status', 'Complied')->count();
         
-        return $total > 0 ? round(($compiled / $total) * 100, 1) : 0;
+        return $total > 0 ? round(($complied / $total) * 100, 1) : 0;
     }
 }
 

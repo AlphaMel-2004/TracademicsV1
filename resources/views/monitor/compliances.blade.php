@@ -3,6 +3,7 @@
 @section('title', 'Monitor Compliances - Program Head')
 
 @section('content')
+<div class="monitor-compliances">
 <div class="mb-6">
     <h1 class="text-3xl font-bold text-gray-800">Monitor Compliances</h1>
     <p class="text-gray-600 mt-2">Track compliance status of faculty under your supervision</p>
@@ -19,12 +20,18 @@
         </div>
         
         <div>
+            <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <input type="text" id="subject" name="subject" value="{{ request('subject') }}" 
+                   class="form-input" placeholder="Search by subject code or description">
+        </div>
+        
+        <div>
             <label for="compliance_status" class="block text-sm font-medium text-gray-700 mb-2">Compliance Status</label>
             <select id="compliance_status" name="compliance_status" class="form-input">
                 <option value="">All Statuses</option>
-                <option value="Complete" {{ request('compliance_status') === 'Complete' ? 'selected' : '' }}>Complete</option>
-                <option value="Incomplete" {{ request('compliance_status') === 'Incomplete' ? 'selected' : '' }}>Incomplete</option>
-                <option value="Pending" {{ request('compliance_status') === 'Pending' ? 'selected' : '' }}>Pending</option>
+                <option value="Complied" {{ request('compliance_status') === 'Complied' ? 'selected' : '' }}>Complied</option>
+                <option value="Not Complied" {{ request('compliance_status') === 'Not Complied' ? 'selected' : '' }}>Not Complied</option>
+                <option value="Not Applicable" {{ request('compliance_status') === 'Not Applicable' ? 'selected' : '' }}>Not Applicable</option>
             </select>
         </div>
         
@@ -64,10 +71,16 @@
                         @forelse($assignment->complianceDocuments as $document)
                         <tr>
                             <td class="font-medium">{{ $member->name }}</td>
-                            <td>{{ $assignment->subject->code }} - {{ $assignment->subject->title }}</td>
+                            <td>
+                                @if($assignment->subject)
+                                    {{ $assignment->subject->code }} - {{ $assignment->subject->title }}
+                                @else
+                                    {{ $assignment->subject_code }} - {{ $assignment->subject_description }}
+                                @endif
+                            </td>
                             <td>{{ $document->documentType->name }}</td>
                             <td>
-                                <span class="status-badge {{ $document->status === 'Compiled' ? 'status-complete' : 'status-pending' }}">
+                                <span class="status-badge {{ $document->status === 'Complied' ? 'status-complete' : 'status-pending' }}">
                                     {{ $document->status }}
                                 </span>
                             </td>
@@ -75,7 +88,13 @@
                                 {{ $document->updated_at ? $document->updated_at->format('M d, Y') : 'Not submitted' }}
                             </td>
                             <td>
-                                @if($document->drive_link)
+                                @if($document->links->count() > 0)
+                                    @foreach($document->links as $index => $link)
+                                        <a href="{{ $link->drive_link }}" target="_blank" class="text-blue-600 hover:text-blue-800 block">
+                                            <i class="bi bi-link-45deg mr-1"></i>{{ $link->description ?? 'Document ' . ($index + 1) }}
+                                        </a>
+                                    @endforeach
+                                @elseif($document->drive_link)
                                     <a href="{{ $document->drive_link }}" target="_blank" class="text-blue-600 hover:text-blue-800">
                                         <i class="bi bi-link-45deg mr-1"></i>View Document
                                     </a>
@@ -87,7 +106,13 @@
                         @empty
                         <tr>
                             <td class="font-medium">{{ $member->name }}</td>
-                            <td>{{ $assignment->subject->code }} - {{ $assignment->subject->title }}</td>
+                            <td>
+                                @if($assignment->subject)
+                                    {{ $assignment->subject->code }} - {{ $assignment->subject->title }}
+                                @else
+                                    {{ $assignment->subject_code }} - {{ $assignment->subject_description }}
+                                @endif
+                            </td>
                             <td colspan="4" class="text-center text-gray-500">
                                 No compliance documents found
                             </td>
@@ -114,27 +139,10 @@
     </div>
 </div>
 
-<!-- Pagination - Show only when records exceed 10 rows -->
-@if($faculty->count() > 10)
-<div class="pagination">
-    @if($faculty->currentPage() > 1)
-        <a href="{{ $faculty->previousPageUrl() }}" class="pagination-link">
-            <i class="bi bi-chevron-left mr-1"></i>Previous
-        </a>
-    @endif
-    
-    @for($i = 1; $i <= $faculty->lastPage(); $i++)
-        <a href="{{ $faculty->url($i) }}" 
-           class="pagination-link {{ $i === $faculty->currentPage() ? 'active' : '' }}">
-            {{ $i }}
-        </a>
-    @endfor
-    
-    @if($faculty->currentPage() < $faculty->lastPage())
-        <a href="{{ $faculty->nextPageUrl() }}" class="pagination-link">
-            Next<i class="bi bi-chevron-right ml-1"></i>
-        </a>
-    @endif
+<!-- Show record count -->
+@if($faculty->count() > 0)
+<div class="mt-4 text-sm text-gray-500 text-center">
+    Showing {{ $faculty->count() }} faculty member{{ $faculty->count() !== 1 ? 's' : '' }}
 </div>
 @endif
 
@@ -146,11 +154,9 @@
             <p class="text-blue-700 text-sm">
                 Use the filters above to search for specific faculty members or compliance statuses. 
                 The table shows all compliance documents for faculty under your supervision.
-                @if($faculty->count() > 10)
-                    <br><strong>Pagination is enabled</strong> when records exceed 10 rows for better performance.
-                @endif
             </p>
         </div>
     </div>
+</div>
 </div>
 @endsection

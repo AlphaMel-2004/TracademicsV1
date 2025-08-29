@@ -67,7 +67,7 @@ class SubjectsController extends Controller
             $existingDocument->update([
                 'drive_link' => $validated['drive_link'],
                 'self_evaluation' => $validated['self_evaluation'],
-                'status' => 'Compiled',
+                'status' => 'Complied',
             ]);
         } else {
             ComplianceDocument::create([
@@ -75,7 +75,7 @@ class SubjectsController extends Controller
                 'document_type_id' => $validated['document_type_id'],
                 'drive_link' => $validated['drive_link'],
                 'self_evaluation' => $validated['self_evaluation'],
-                'status' => 'Compiled',
+                'status' => 'Complied',
             ]);
         }
 

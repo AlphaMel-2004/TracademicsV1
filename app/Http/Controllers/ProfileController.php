@@ -11,13 +11,13 @@ class ProfileController extends Controller
 {
     public function settings()
     {
-        $user = Auth::user();
+        $user = User::with(['role', 'department', 'program'])->find(Auth::id());
         return view('profile.settings', compact('user'));
     }
 
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user = User::with(['role', 'department', 'program'])->find(Auth::id());
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',

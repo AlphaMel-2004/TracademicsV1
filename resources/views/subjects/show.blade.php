@@ -66,7 +66,7 @@
                             @endif
                         </td>
                         <td>
-                            <span class="status-badge {{ $status === 'Compiled' ? 'status-complete' : 'status-pending' }}">
+                            <span class="status-badge {{ $status === 'Complied' ? 'status-complete' : 'status-pending' }}">
                                 {{ $status }}
                             </span>
                         </td>
@@ -96,7 +96,7 @@
     
     @php
         $totalRequirements = $documentTypes->count();
-        $completedRequirements = $assignment->complianceDocuments->where('status', 'Compiled')->count();
+        $completedRequirements = $assignment->complianceDocuments->where('status', 'Complied')->count();
         $percentage = $totalRequirements > 0 ? round(($completedRequirements / $totalRequirements) * 100, 1) : 0;
     @endphp
     

@@ -54,7 +54,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                        <input type="text" value="{{ $user->role->name }}" class="form-input bg-gray-50" readonly>
+                        <input type="text" value="{{ $user->role ? $user->role->name : 'No Role Assigned' }}" class="form-input bg-gray-50" readonly>
                     </div>
                     
                     @if($user->department)
