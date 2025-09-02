@@ -84,6 +84,7 @@ Route::middleware(['auth', 'role:VPAA', 'semester.session', 'activity.logger'])-
     Route::get('/departments', [\App\Http\Controllers\MonitorController::class, 'departments'])->name('monitor.departments');
     Route::get('/departments/{department}/programs', [\App\Http\Controllers\MonitorController::class, 'programs'])->name('monitor.programs');
     Route::get('/programs/{program}/faculty', [\App\Http\Controllers\MonitorController::class, 'facultyCompliance'])->name('monitor.faculty-compliance');
+    Route::get('/programs/{program}/faculty/{faculty}', [\App\Http\Controllers\MonitorController::class, 'vpaaFacultyDetail'])->name('monitor.vpaa-faculty-detail');
     Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
     
     // API routes for dashboard filters
@@ -100,6 +101,7 @@ Route::middleware(['auth', 'role:Dean', 'semester.session', 'activity.logger'])-
 // Program Head Routes - Only accessible by Program Head role
 Route::middleware(['auth', 'role:Program Head', 'semester.session', 'activity.logger'])->group(function () {
     Route::get('/monitor/compliances', [\App\Http\Controllers\MonitorController::class, 'compliances'])->name('monitor.compliances');
+    Route::get('/monitor/faculty/{faculty}', [\App\Http\Controllers\MonitorController::class, 'facultyDetail'])->name('monitor.faculty-detail');
     Route::get('/faculty-load', [\App\Http\Controllers\FacultyAssignmentController::class, 'index'])->name('assignments.index');
 });
 

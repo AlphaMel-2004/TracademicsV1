@@ -10,7 +10,7 @@
         @elseif($data['type'] === 'dean')
             {{ $user->department->name }} Dashboard
         @elseif($data['type'] === 'program_head')
-            {{ $user->program->name }} Dashboard
+            {{ $user->program->name ?? 'Program Head' }} Dashboard
         @else
             My Dashboard
         @endif
@@ -60,7 +60,7 @@
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Overall Compliance</p>
                         <p class="text-2xl font-semibold text-gray-900">
-                            {{ $data['overall_stats']['total_required'] > 0 ? round(($data['overall_stats']['total_complied'] / $data['overall_stats']['total_required']) * 100, 1) : 0 }}%
+                            {{ $data['overall_stats']['total_documents'] > 0 ? round(($data['overall_stats']['total_complied'] / $data['overall_stats']['total_documents']) * 100, 1) : 0 }}%
                         </p>
                     </div>
                 </div>
@@ -259,6 +259,20 @@
 
     @elseif($data['type'] === 'program_head')
         <!-- Program Head Dashboard -->
+        @if(isset($data['error']) && $data['error'])
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+                <div class="flex items-center">
+                    <div class="p-2 bg-red-100 rounded-full">
+                        <i class="bi bi-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-red-800">Configuration Required</h3>
+                        <p class="text-red-600 mt-1">{{ $data['message'] ?? 'Please contact your administrator to assign you to a program.' }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
@@ -267,7 +281,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Program Faculty</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['faculty_count'] }}</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['faculty_count'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -278,7 +292,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Total Assignments</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['assignment_count'] }}</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['assignment_count'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -289,7 +303,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Compliance Rate</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['compliance_rate'] }}%</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $data['prog_stats']['compliance_rate'] ?? 0 }}%</p>
                     </div>
                 </div>
             </div>
@@ -299,34 +313,34 @@
         <div class="bg-white rounded-lg shadow mb-8">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">Program Compliance Chart</h3>
-                <p class="text-sm text-gray-600 mt-1">Compliance status for faculty under {{ $user->program->name }}</p>
+                <p class="text-sm text-gray-600 mt-1">Compliance status for faculty under {{ $user->program->name ?? 'Unknown Program' }}</p>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-blue-600">{{ $data['compliance_chart']['total'] }}</div>
+                        <div class="text-3xl font-bold text-blue-600">{{ $data['compliance_chart']['total'] ?? 0 }}</div>
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] ?? 0 }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-purple-600">{{ $data['compliance_chart']['percentage'] }}%</div>
+                        <div class="text-3xl font-bold text-purple-600">{{ $data['compliance_chart']['percentage'] ?? 0 }}%</div>
                         <div class="text-sm text-gray-600">Completion Rate</div>
                     </div>
                 </div>
                 
                 <div class="w-full bg-gray-200 rounded-full h-4">
                     <div class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" 
-                         style="width: {{ $data['compliance_chart']['percentage'] }}%"></div>
+                         style="width: {{ $data['compliance_chart']['percentage'] ?? 0 }}%"></div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Faculty in {{ $user->program->name }}</h3>
+                <h3 class="text-lg font-medium text-gray-900">Faculty in {{ $user->program->name ?? 'Program' }}</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -338,13 +352,25 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($data['faculty'] as $faculty)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $faculty->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $faculty->email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $faculty->facultyAssignments->count() }}</td>
-                        </tr>
-                        @endforeach
+                        @if(isset($data['faculty']) && $data['faculty']->count() > 0)
+                            @foreach($data['faculty'] as $faculty)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $faculty->name ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $faculty->email ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $faculty->facultyAssignments->count() ?? 0 }}</td>
+                            </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    @if(isset($data['error']) && $data['error'])
+                                        No faculty data available. Please ensure you are assigned to a program.
+                                    @else
+                                        No faculty members found in this program.
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
@@ -360,7 +386,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">My Assignments</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ $data['assignments']->count() }}</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $data['assignments']->count() ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -371,7 +397,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">My Compliance Rate</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ $data['compliance_rate'] }}%</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $data['compliance_rate'] ?? 0 }}%</p>
                     </div>
                 </div>
             </div>
@@ -386,27 +412,27 @@
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-blue-600">{{ $data['compliance_chart']['total'] }}</div>
+                        <div class="text-3xl font-bold text-blue-600">{{ $data['compliance_chart']['total'] ?? 0 }}</div>
                         <div class="text-sm text-gray-600">Total Requirements</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] }}</div>
+                        <div class="text-3xl font-bold text-green-600">{{ $data['compliance_chart']['complied'] ?? 0 }}</div>
                         <div class="text-sm text-gray-600">Completed</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-3xl font-bold text-purple-600">{{ $data['compliance_chart']['percentage'] }}%</div>
+                        <div class="text-3xl font-bold text-purple-600">{{ $data['compliance_chart']['percentage'] ?? 0 }}%</div>
                         <div class="text-sm text-gray-600">Completion Rate</div>
                     </div>
                 </div>
                 
                 <div class="w-full bg-gray-200 rounded-full h-4">
                     <div class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" 
-                         style="width: {{ $data['compliance_chart']['percentage'] }}%"></div>
+                         style="width: {{ $data['compliance_chart']['percentage'] ?? 0 }}%"></div>
                 </div>
             </div>
         </div>
 
-        @if($data['assignments']->count() > 0)
+        @if(isset($data['assignments']) && $data['assignments']->count() > 0)
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900">My Subject Assignments</h3>

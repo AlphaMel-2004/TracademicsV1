@@ -57,19 +57,20 @@
         <p class="text-sm text-gray-600 mt-1">Showing {{ $faculty->count() }} faculty members</p>
     </div>
     
-    <div class="overflow-x-auto">
-        <table class="uniform-table">
-            <thead>
-                <tr>
-                    <th>Faculty Name</th>
-                    <th>Subject</th>
-                    <th>Compliance Item</th>
-                    <th>Status</th>
-                    <th>Date Submitted</th>
-                    <th>Drive Link</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="overflow-hidden">
+        <div class="max-h-96 overflow-y-auto">
+            <table class="uniform-table">
+                <thead class="sticky top-0 bg-gray-50 z-10">
+                    <tr>
+                        <th>Faculty Name</th>
+                        <th>Subject</th>
+                        <th>Compliance Item</th>
+                        <th>Status</th>
+                        <th>Date Submitted</th>
+                        <th>Drive Link</th>
+                    </tr>
+                </thead>
+                <tbody>
                 @forelse($faculty as $member)
                     @forelse($member->facultyAssignments as $assignment)
                         @forelse($assignment->complianceDocuments as $document)
@@ -140,6 +141,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

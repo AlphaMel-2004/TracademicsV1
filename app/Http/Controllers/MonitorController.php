@@ -114,6 +114,50 @@ class MonitorController extends Controller
         return view('monitor.faculty-compliance', compact('program', 'faculty'));
     }
 
+    public function vpaaFacultyDetail(Request $request, $programId, $facultyId)
+    {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'VPAA') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $program = Program::with('department')->findOrFail($programId);
+        
+        // Verify the faculty belongs to the specified program
+        $faculty = User::where('id', $facultyId)
+            ->where('program_id', $programId)
+            ->whereHas('role', function($query) {
+                $query->where('name', 'Faculty Member');
+            })
+            ->firstOrFail();
+
+        // VPAA can see all assignments across all semesters
+        $assignmentsQuery = $faculty->facultyAssignments();
+
+        // Apply subject filter
+        if ($request->filled('subject')) {
+            $assignmentsQuery->where(function($subQuery) use ($request) {
+                $subQuery->where('subject_code', 'like', '%' . $request->get('subject') . '%')
+                        ->orWhere('subject_description', 'like', '%' . $request->get('subject') . '%');
+            });
+        }
+
+        $assignments = $assignmentsQuery->with([
+            'subject',
+            'semester',
+            'complianceDocuments' => function($docQuery) use ($request) {
+                // Apply compliance status filter
+                if ($request->filled('status')) {
+                    $docQuery->where('status', $request->get('status'));
+                }
+            },
+            'complianceDocuments.documentType',
+            'complianceDocuments.links'
+        ])->orderBy('semester_id', 'desc')->get();
+
+        return view('monitor.vpaa-faculty-detail', compact('program', 'faculty', 'assignments'));
+    }
+
     public function faculty()
     {
         $user = Auth::user();
@@ -224,30 +268,75 @@ class MonitorController extends Controller
             $query->where('name', 'like', '%' . $request->get('faculty_name') . '%');
         }
 
-        $faculty = $query->with([
-            'facultyAssignments' => function($assignmentQuery) use ($user, $request) {
+        // Get faculty with assignment counts and compliance stats
+        $faculty = $query->withCount([
+            'facultyAssignments as total_assignments' => function($assignmentQuery) use ($user) {
                 $assignmentQuery->where('semester_id', $user->current_semester_id);
-                
-                // Apply subject filter
-                if ($request->filled('subject')) {
-                    $assignmentQuery->where(function($subQuery) use ($request) {
-                        $subQuery->where('subject_code', 'like', '%' . $request->get('subject') . '%')
-                                ->orWhere('subject_description', 'like', '%' . $request->get('subject') . '%');
-                    });
-                }
-            },
-            'facultyAssignments.subject',
-            'facultyAssignments.complianceDocuments' => function($docQuery) use ($request) {
-                // Apply compliance status filter
-                if ($request->filled('compliance_status')) {
-                    $docQuery->where('status', $request->get('compliance_status'));
-                }
-            },
-            'facultyAssignments.complianceDocuments.documentType',
-            'facultyAssignments.complianceDocuments.links'
-        ])->get();
+            }
+        ])->get()->map(function($member) use ($user) {
+            // Calculate compliance statistics for each faculty
+            $assignments = $member->facultyAssignments()
+                ->where('semester_id', $user->current_semester_id)
+                ->with('complianceDocuments')
+                ->get();
+            
+            $totalDocuments = $assignments->sum(function($assignment) {
+                return $assignment->complianceDocuments->count();
+            });
+            
+            $compliedDocuments = $assignments->sum(function($assignment) {
+                return $assignment->complianceDocuments->where('status', 'Complied')->count();
+            });
+            
+            $member->total_documents = $totalDocuments;
+            $member->complied_documents = $compliedDocuments;
+            $member->compliance_rate = $totalDocuments > 0 ? round(($compliedDocuments / $totalDocuments) * 100, 1) : 0;
+            
+            return $member;
+        });
 
         return view('monitor.compliances', compact('faculty'));
+    }
+
+    public function facultyDetail(Request $request, $facultyId)
+    {
+        $user = Auth::user();
+        if (!$user->role || $user->role->name !== 'Program Head') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Verify the faculty belongs to the program head's program
+        $faculty = User::where('id', $facultyId)
+            ->where('program_id', $user->program_id)
+            ->whereHas('role', function($query) {
+                $query->where('name', 'Faculty Member');
+            })
+            ->firstOrFail();
+
+        $assignmentsQuery = $faculty->facultyAssignments()
+            ->where('semester_id', $user->current_semester_id);
+
+        // Apply subject filter
+        if ($request->filled('subject')) {
+            $assignmentsQuery->where(function($subQuery) use ($request) {
+                $subQuery->where('subject_code', 'like', '%' . $request->get('subject') . '%')
+                        ->orWhere('subject_description', 'like', '%' . $request->get('subject') . '%');
+            });
+        }
+
+        $assignments = $assignmentsQuery->with([
+            'subject',
+            'complianceDocuments' => function($docQuery) use ($request) {
+                // Apply compliance status filter
+                if ($request->filled('status')) {
+                    $docQuery->where('status', $request->get('status'));
+                }
+            },
+            'complianceDocuments.documentType',
+            'complianceDocuments.links'
+        ])->get();
+
+        return view('monitor.faculty-detail', compact('faculty', 'assignments'));
     }
 
     private function calculateComplianceRate($userId)

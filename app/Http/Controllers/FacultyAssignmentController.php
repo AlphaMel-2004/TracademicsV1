@@ -42,9 +42,16 @@ class FacultyAssignmentController extends Controller
         $courseId = $userProgram->id;
         
         // Get available subjects only from the curriculum for the specific program/course
+        // Group by subject_code and subject_description to avoid duplicates
+        // Use MIN(id) to ensure we get a consistent ID for each unique subject
         $availableSubjects = CurriculumSubject::whereHas('curriculum', function($q) use ($courseId) {
             $q->where('course_id', $courseId);
-        })->orderBy('subject_code')->get();
+        })
+        ->select('subject_code', 'subject_description')
+        ->selectRaw('MIN(id) as id')
+        ->groupBy('subject_code', 'subject_description')
+        ->orderBy('subject_code')
+        ->get();
 
         // Transform curriculum subjects to look like regular subjects for the view
         $subjects = $availableSubjects->map(function($curriculumSubject) {
@@ -94,9 +101,11 @@ class FacultyAssignmentController extends Controller
         $curriculumSubject = CurriculumSubject::findOrFail($validated['subject_id']);
         
         // Verify that the curriculum subject belongs to this program's curriculum
-        $belongsToProgram = $curriculumSubject->whereHas('curriculum', function($q) use ($programId) {
-            $q->where('course_id', $programId);
-        })->exists();
+        $belongsToProgram = CurriculumSubject::where('subject_code', $curriculumSubject->subject_code)
+            ->where('subject_description', $curriculumSubject->subject_description)
+            ->whereHas('curriculum', function($q) use ($programId) {
+                $q->where('course_id', $programId);
+            })->exists();
         
         if (!$belongsToProgram) {
             return back()->withErrors(['subject_id' => 'Invalid subject selection. Subject does not belong to your program curriculum.']);
@@ -123,7 +132,7 @@ class FacultyAssignmentController extends Controller
         }
 
         // Create the assignment
-        FacultyAssignment::create([
+        $assignment = FacultyAssignment::create([
             'faculty_id' => $validated['faculty_id'],
             'subject_code' => $curriculumSubject->subject_code,
             'subject_description' => $curriculumSubject->subject_description,
@@ -131,6 +140,9 @@ class FacultyAssignmentController extends Controller
             'program_id' => $programId,
             'status' => 'Active',
         ]);
+
+        // Create compliance documents for this assignment
+        $this->createComplianceDocuments($assignment);
 
         return back()->with('status', 'Subject load assigned successfully.');
     }
@@ -145,6 +157,25 @@ class FacultyAssignmentController extends Controller
 
         $assignment->delete();
         return back()->with('status', 'Subject load removed successfully.');
+    }
+
+    /**
+     * Create compliance documents for a faculty assignment
+     */
+    private function createComplianceDocuments(FacultyAssignment $assignment)
+    {
+        $documentTypes = \App\Models\DocumentType::all();
+        
+        foreach ($documentTypes as $docType) {
+            \App\Models\ComplianceDocument::firstOrCreate([
+                'user_id' => $assignment->faculty_id,
+                'assignment_id' => $assignment->id,
+                'document_type_id' => $docType->id,
+            ], [
+                'term_id' => $assignment->semester_id,
+                'status' => 'Not Complied',
+            ]);
+        }
     }
 }
 

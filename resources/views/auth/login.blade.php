@@ -41,14 +41,19 @@
                 <span class="input-icon">
                     <i class="bi bi-person"></i>
                 </span>
-                <input 
-                    type="email" 
-                    name="email" 
-                    value="{{ old('email') }}" 
-                    class="login-input" 
-                    placeholder="user@brokenshire.edu.ph" 
-                    required 
-                />
+                <div class="email-input-group">
+                    <input 
+                        type="text" 
+                        id="username-input"
+                        value="{{ old('email') ? str_replace('@brokenshire.edu.ph', '', old('email')) : '' }}" 
+                        class="login-input email-username-input" 
+                        placeholder="Enter your username" 
+                        required 
+                        autocomplete="username"
+                    />
+                    <div class="email-domain-display">@brokenshire.edu.ph</div>
+                </div>
+                <input type="hidden" name="email" id="email-hidden" value="{{ old('email') }}">
             </div>
             
             <div class="input-container">
@@ -84,25 +89,225 @@
                 </div>
             @endif
             
-            <div class="mt-6 text-center">
-                <p class="mb-4 text-sm text-gray-500">Or continue with</p>
-                <a href="{{ route('google.redirect') }}" class="inline-flex items-center justify-center w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" fill="#4285F4"/>
-                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" fill="#34A853" transform="translate(0 8) scale(1 .5)"/>
-                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" fill="#FBBC05" transform="translate(5) scale(.5)"/>
-                        <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" fill="#EA4335" transform="translate(15) scale(.5)"/>
-                    </svg>
-                    Sign in with Google
-                </a>
-            </div>
-            
             <div class="mt-6 text-center text-sm text-gray-500">
                 <p>Only emails ending with @brokenshire.edu.ph are allowed.</p>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+.email-input-group {
+    position: relative;
+    width: 100%;
+    background: white;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.email-input-group:focus-within {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.email-username-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 12px 15px !important;
+    padding-right: 200px !important; /* Make space for domain */
+    font-size: 16px;
+    width: 100%;
+    border-radius: 0 !important;
+}
+
+.email-username-input:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.email-domain-display {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 16px;
+    pointer-events: none;
+    user-select: none;
+    background: white;
+    padding: 2px 4px;
+    font-weight: 400;
+    transition: color 0.3s ease;
+}
+
+.email-input-group:focus-within .email-domain-display {
+    color: #10b981;
+}
+
+/* Error state */
+.input-container.error .email-input-group {
+    border-color: #ef4444;
+}
+
+.input-container.error .email-input-group:focus-within {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-container.error .email-domain-display {
+    color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .email-username-input {
+        padding-right: 180px !important;
+    }
+    
+    .email-domain-display {
+        font-size: 14px;
+        right: 10px;
+    }
+}
+
+/* Floating label effect when user starts typing */
+.email-input-group.has-content .email-domain-display {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Animation for a smooth user experience */
+.email-username-input::placeholder {
+    color: #9ca3af;
+    transition: opacity 0.3s ease;
+}
+
+.email-username-input:focus::placeholder {
+    opacity: 0.7;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('username-input');
+    const emailHidden = document.getElementById('email-hidden');
+    const emailGroup = usernameInput.closest('.email-input-group');
+    const inputContainer = usernameInput.closest('.input-container');
+    
+    function updateEmailField() {
+        const username = usernameInput.value.trim();
+        const fullEmail = username ? username + '@brokenshire.edu.ph' : '';
+        emailHidden.value = fullEmail;
+        
+        // Add visual feedback for content
+        if (username) {
+            emailGroup.classList.add('has-content');
+        } else {
+            emailGroup.classList.remove('has-content');
+        }
+    }
+    
+    function validateUsername(username) {
+        // Basic validation for username format
+        const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+        return usernameRegex.test(username) && username.length >= 2;
+    }
+    
+    function showError(message) {
+        inputContainer.classList.add('error');
+        
+        // Remove existing error message
+        const existingError = inputContainer.querySelector('.username-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Add new error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'username-error';
+        errorDiv.style.cssText = 'color: #ef4444; font-size: 14px; margin-top: 5px; padding-left: 40px;';
+        errorDiv.textContent = message;
+        inputContainer.appendChild(errorDiv);
+    }
+    
+    function clearError() {
+        inputContainer.classList.remove('error');
+        const existingError = inputContainer.querySelector('.username-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+    
+    // Real-time validation and updates
+    usernameInput.addEventListener('input', function() {
+        updateEmailField();
+        clearError();
+        
+        const username = usernameInput.value.trim();
+        if (username && !validateUsername(username)) {
+            showError('Username can only contain letters, numbers, dots, hyphens, and underscores');
+        }
+    });
+    
+    // Focus and blur effects
+    usernameInput.addEventListener('focus', function() {
+        clearError();
+    });
+    
+    // Initialize on page load
+    updateEmailField();
+    
+    // Enhanced form submission with better validation
+    const form = usernameInput.closest('form');
+    form.addEventListener('submit', function(e) {
+        updateEmailField();
+        clearError();
+        
+        const username = usernameInput.value.trim();
+        
+        // Validate that username is not empty
+        if (!username) {
+            e.preventDefault();
+            showError('Please enter your username');
+            usernameInput.focus();
+            return false;
+        }
+        
+        // Validate username format
+        if (!validateUsername(username)) {
+            e.preventDefault();
+            showError('Please enter a valid username (letters, numbers, dots, hyphens, underscores only)');
+            usernameInput.focus();
+            return false;
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split mr-2"></i>Signing in...';
+        }
+    });
+    
+    // Add helpful tooltips
+    usernameInput.addEventListener('focus', function() {
+        if (!usernameInput.value) {
+            usernameInput.placeholder = 'e.g., john.doe, mary.smith, or jdoe';
+        }
+    });
+    
+    usernameInput.addEventListener('blur', function() {
+        if (!usernameInput.value) {
+            usernameInput.placeholder = 'Enter your username';
+        }
+    });
+});
+</script>
 @endsection
 
 

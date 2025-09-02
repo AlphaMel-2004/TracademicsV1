@@ -120,6 +120,56 @@ class ComplianceDocument extends Model
     {
         return $query->where('term_id', $termId);
     }
+
+    /**
+     * Additional optimized scopes for performance
+     */
+    public function scopeWithAssignmentDetails($query)
+    {
+        return $query->with([
+            'assignment.user:id,name,email,department_id,program_id',
+            'assignment.subject:code,title',
+            'documentType:id,name,submission_type'
+        ]);
+    }
+
+    public function scopeRecentlyUpdated($query, $hours = 24)
+    {
+        return $query->where('updated_at', '>=', now()->subHours($hours));
+    }
+
+    public function scopeForPerformanceAnalysis($query)
+    {
+        return $query->select([
+            'compliance_documents.*',
+            'document_types.name as document_name',
+            'users.name as faculty_name',
+            'departments.name as department_name'
+        ])
+        ->join('document_types', 'compliance_documents.document_type_id', '=', 'document_types.id')
+        ->join('faculty_assignments', 'compliance_documents.assignment_id', '=', 'faculty_assignments.id')
+        ->join('users', 'faculty_assignments.faculty_id', '=', 'users.id')
+        ->leftJoin('departments', 'users.department_id', '=', 'departments.id');
+    }
+
+    public function scopePendingSubmissions($query)
+    {
+        return $query->where('status', 'Not Complied')
+            ->where('created_at', '<=', now()->subDays(7)); // Pending for more than a week
+    }
+
+    public function scopeCompletedToday($query)
+    {
+        return $query->where('status', 'Complied')
+            ->whereDate('updated_at', today());
+    }
+
+    public function scopeBySubmissionType($query, $submissionType)
+    {
+        return $query->whereHas('documentType', function ($q) use ($submissionType) {
+            $q->where('submission_type', $submissionType);
+        });
+    }
 }
 
 

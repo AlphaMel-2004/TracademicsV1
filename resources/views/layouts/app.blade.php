@@ -86,16 +86,33 @@
 				<div class="flex items-center gap-2 text-white">
 					<span class="font-semibold"></span>
 				</div>
-				<div class="relative">
-					<div class="group inline-block">
-						<button class="profile-dropdown-btn flex items-center gap-2 text-white hover:text-gray-200 transition-colors">
-							<i class="bi bi-person-circle text-2xl"></i>
-							<span class="hidden md:inline">{{ auth()->user()->name }}</span>
-							<i class="bi bi-chevron-down text-sm"></i>
+				<div class="flex items-center gap-4">
+					<!-- Notification Bell -->
+					<div class="relative">
+						<button class="notification-bell text-white hover:text-gray-200 transition-colors p-2">
+							<i class="bi bi-bell text-xl"></i>
+							<!-- Notification badge (optional) -->
+							<span class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"></span>
 						</button>
-						<div class="profile-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-							<a class="block px-4 py-2 hover:bg-gray-50 text-gray-700" href="{{ route('profile.settings') }}">Profile Settings</a>
-							<button onclick="showLogoutModal()" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700">Logout</button>
+					</div>
+
+					<!-- User Profile Dropdown -->
+					<div class="relative">
+						<div class="group inline-block">
+							<button class="profile-dropdown-btn flex items-center gap-3 text-white hover:text-gray-200 transition-colors">
+								<!-- User Avatar with Initials -->
+								<div class="user-avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+									{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', auth()->user()->name)[1] ?? '', 0, 1)) }}
+								</div>
+							</button>
+							<div class="profile-dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+								<a class="block px-4 py-2 hover:bg-gray-50 text-gray-700" href="{{ route('profile.settings') }}">
+									<i class="bi bi-person mr-2"></i>Profile Settings
+								</a>
+								<button onclick="showLogoutModal()" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700">
+									<i class="bi bi-box-arrow-right mr-2"></i>Logout
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -188,7 +205,9 @@
 		document.addEventListener('DOMContentLoaded', function() {
 			const dropdownBtn = document.querySelector('.profile-dropdown-btn');
 			const dropdownMenu = document.querySelector('.profile-dropdown-menu');
+			const notificationBell = document.querySelector('.notification-bell');
 
+			// Profile dropdown
 			if (dropdownBtn && dropdownMenu) {
 				dropdownBtn.addEventListener('click', function(e) {
 					e.stopPropagation();
@@ -200,6 +219,15 @@
 					if (!e.target.closest('.group')) {
 						dropdownMenu.classList.add('hidden');
 					}
+				});
+			}
+
+			// Notification bell functionality (placeholder for future implementation)
+			if (notificationBell) {
+				notificationBell.addEventListener('click', function(e) {
+					e.stopPropagation();
+					// TODO: Add notification dropdown or redirect to notifications page
+					console.log('Notification bell clicked');
 				});
 			}
 		});

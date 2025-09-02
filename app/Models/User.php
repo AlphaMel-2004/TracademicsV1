@@ -131,4 +131,60 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserActivityLog::class);
     }
+
+    /**
+     * Additional optimized query scopes for performance
+     */
+    public function scopeWithCompleteProfile($query)
+    {
+        return $query->with(['role', 'department', 'program'])
+            ->whereNotNull('role_id')
+            ->whereNotNull('department_id');
+    }
+
+    public function scopeActiveInCurrentSemester($query)
+    {
+        return $query->whereNotNull('current_semester_id')
+            ->whereHas('currentSemester', function ($q) {
+                $q->where('is_active', true);
+            });
+    }
+
+    public function scopeWithAssignmentStats($query)
+    {
+        return $query->withCount([
+            'facultyAssignments',
+            'facultyAssignments as complied_assignments_count' => function ($q) {
+                $q->whereHas('complianceDocuments', function ($subQuery) {
+                    $subQuery->where('status', 'Complied');
+                });
+            }
+        ]);
+    }
+
+    public function scopeForPerformanceReport($query, $departmentId = null, $programId = null)
+    {
+        $query->select([
+            'users.id',
+            'users.name',
+            'users.email',
+            'users.faculty_type',
+            'departments.name as department_name',
+            'programs.name as program_name'
+        ])
+        ->join('roles', 'users.role_id', '=', 'roles.id')
+        ->leftJoin('departments', 'users.department_id', '=', 'departments.id')
+        ->leftJoin('programs', 'users.program_id', '=', 'programs.id')
+        ->where('roles.name', 'Faculty Member');
+
+        if ($departmentId) {
+            $query->where('users.department_id', $departmentId);
+        }
+
+        if ($programId) {
+            $query->where('users.program_id', $programId);
+        }
+
+        return $query;
+    }
 }
