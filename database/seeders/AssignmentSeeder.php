@@ -9,6 +9,7 @@ use App\Models\Subject;
 use App\Models\Semester;
 use App\Models\FacultyAssignment;
 use App\Models\ComplianceDocument;
+use App\Models\ComplianceLink;
 
 class AssignmentSeeder extends Seeder
 {
@@ -32,15 +33,23 @@ class AssignmentSeeder extends Seeder
             foreach ($selectedSubjects as $subject) {
                 $semester = $semesters->random();
                 
-                $assignment = FacultyAssignment::create([
-                    'faculty_id' => $facultyMember->id,
-                    'subject_id' => $subject->id,
-                    'semester_id' => $semester->id,
-                    'program_id' => $facultyMember->program_id,
-                ]);
+                // Use firstOrCreate to avoid duplicate assignments
+                $assignment = FacultyAssignment::firstOrCreate(
+                    [
+                        'faculty_id' => $facultyMember->id,
+                        'subject_id' => $subject->id,
+                        'semester_id' => $semester->id,
+                    ],
+                    [
+                        'program_id' => $facultyMember->program_id,
+                        'status' => 'Active',
+                    ]
+                );
 
-                // Create compliance documents for this assignment
-                $this->createComplianceDocuments($assignment);
+                // Only create compliance documents if this is a new assignment
+                if ($assignment->wasRecentlyCreated) {
+                    $this->createComplianceDocuments($assignment);
+                }
             }
         }
     }
@@ -52,14 +61,27 @@ class AssignmentSeeder extends Seeder
         foreach ($documentTypes as $docType) {
             // Randomly set some documents as complied, some as not complied
             $status = rand(1, 3) === 1 ? 'Complied' : 'Not Complied';
-            $driveLink = $status === 'Complied' ? 'https://drive.google.com/file/d/sample' . rand(1000, 9999) . '/view' : null;
             
-            ComplianceDocument::create([
-                'assignment_id' => $assignment->id,
+            // Create compliance document with new structure
+            $complianceDoc = ComplianceDocument::create([
+                'user_id' => $assignment->faculty_id,
                 'document_type_id' => $docType->id,
+                'term_id' => $assignment->semester_id, // Note: semester_id maps to term_id in compliance_documents
+                'subject_id' => $assignment->subject_id,
                 'status' => $status,
-                'drive_link' => $driveLink,
+                'remarks' => $status === 'Complied' ? 'Document submitted successfully' : null,
             ]);
+            
+            // If the document is complied, create a compliance link
+            if ($status === 'Complied') {
+                ComplianceLink::create([
+                    'compliance_document_id' => $complianceDoc->id,
+                    'drive_link' => 'https://drive.google.com/file/d/sample' . rand(1000, 9999) . '/view',
+                    'description' => 'Document submission for ' . $docType->name,
+                    'submitted_by' => $assignment->faculty_id,
+                    'submitted_at' => now(),
+                ]);
+            }
         }
     }
 }
