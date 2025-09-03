@@ -306,6 +306,27 @@ document.addEventListener('DOMContentLoaded', function() {
             usernameInput.placeholder = 'Enter your username';
         }
     });
+    
+    // Refresh CSRF token every 5 minutes to prevent 419 errors
+    setInterval(function() {
+        fetch('/csrf-token', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const csrfTokenInput = document.querySelector('input[name="_token"]');
+            if (csrfTokenInput && data.csrf_token) {
+                csrfTokenInput.value = data.csrf_token;
+                console.log('CSRF token refreshed');
+            }
+        })
+        .catch(error => {
+            console.log('CSRF token refresh failed:', error);
+        });
+    }, 300000); // 5 minutes
 });
 </script>
 @endsection

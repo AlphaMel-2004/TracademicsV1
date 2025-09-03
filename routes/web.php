@@ -15,6 +15,11 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 
+// CSRF token refresh route
+Route::get('/csrf-token', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
+
 // Google OAuth routes
 Route::get('/auth/google/redirect', function () {
     return Socialite::driver('google')->with(['hd' => 'brokenshire.edu.ph'])->redirect();
