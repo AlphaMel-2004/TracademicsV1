@@ -21,6 +21,7 @@ export default defineConfig({
     build: {
         target: 'es2020',
         rollupOptions: {
+            external: ['fsevents', '../pkg'],
             output: {
                 manualChunks: {
                     vendor: ['laravel-vite-plugin']
