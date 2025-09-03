@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'semester.session' => \App\Http\Middleware\SemesterSession::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
+        
+        // Validate CSRF tokens on all requests except debug routes
+        $middleware->validateCsrfTokens(except: [
+            'debug-session',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

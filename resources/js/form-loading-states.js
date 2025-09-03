@@ -24,7 +24,7 @@ class FormLoadingManager {
         // Handle regular form submissions
         document.addEventListener('submit', (e) => {
             const form = e.target;
-            if (form.tagName === 'FORM' && !form.dataset.noLoading) {
+            if (form.tagName === 'FORM' && !form.dataset.noLoading && !this.isLoginForm(form)) {
                 this.showFormLoading(form);
             }
         });
@@ -88,6 +88,17 @@ class FormLoadingManager {
         document.querySelectorAll(`.${this.loadingClass}`).forEach(form => {
             this.hideFormLoading(form);
         });
+    }
+
+    isLoginForm(form) {
+        // Check if this is a login form that should not be disabled
+        const action = form.getAttribute('action');
+        const formContent = form.innerHTML;
+        
+        // Check for login-specific indicators
+        return action && (action.includes('/login') || action.includes('login.submit')) ||
+               formContent.includes('password') && formContent.includes('email') &&
+               (formContent.includes('Login') || formContent.includes('Sign in'));
     }
 
     createLoadingOverlay(form) {

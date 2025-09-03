@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Session\TokenMismatchException;
 
 class LoginController extends Controller
@@ -17,6 +18,15 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         try {
+            // Debug: Log request data
+            Log::info('Login attempt', [
+                'has_token' => $request->has('_token'),
+                'token_value' => $request->input('_token'),
+                'session_token' => session()->token(),
+                'email' => $request->input('email'),
+                'user_agent' => $request->userAgent(),
+            ]);
+            
             $credentials = $request->validate([
                 'email' => ['required', 'email'],
                 'password' => ['required'],
@@ -35,7 +45,15 @@ class LoginController extends Controller
             return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
             
         } catch (TokenMismatchException $e) {
+            Log::error('CSRF Token Mismatch', [
+                'request_token' => $request->input('_token'),
+                'session_token' => session()->token(),
+                'session_id' => session()->getId(),
+            ]);
             return redirect()->route('login')->withErrors(['email' => 'Page expired. Please try again.']);
+        } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+            return back()->withErrors(['email' => 'An error occurred. Please try again.'])->withInput();
         }
     }
 }

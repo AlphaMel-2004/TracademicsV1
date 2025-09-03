@@ -20,6 +20,27 @@ Route::get('/csrf-token', function () {
     return response()->json(['csrf_token' => csrf_token()]);
 });
 
+// Debug route to check session
+Route::get('/debug-session', function () {
+    return response()->json([
+        'csrf_token' => csrf_token(),
+        'session_id' => session()->getId(),
+        'session_driver' => config('session.driver'),
+        'app_key_set' => !empty(config('app.key')),
+        'session_lifetime' => config('session.lifetime'),
+    ]);
+});
+
+// Simple login test
+Route::get('/simple-login', function () {
+    return view('auth.simple-login');
+})->name('simple-login');
+
+// Ultra basic login test (no CSS/JS interference)
+Route::get('/basic-login', function () {
+    return view('auth.basic-login');
+})->name('basic-login');
+
 // Google OAuth routes
 Route::get('/auth/google/redirect', function () {
     return Socialite::driver('google')->with(['hd' => 'brokenshire.edu.ph'])->redirect();
