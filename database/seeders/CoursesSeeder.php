@@ -49,10 +49,10 @@ class CoursesSeeder extends Seeder
 
         DB::table('document_types')
             ->whereIn('name', $oncePerSemesterDocs)
-            ->update(['submission_type' => 'once_per_semester']);
+            ->update(['submission_type' => 'semester']);
 
         DB::table('document_types')
             ->whereIn('name', $perSubjectDocs)
-            ->update(['submission_type' => 'per_subject']);
+            ->update(['submission_type' => 'subject']);
     }
 }
